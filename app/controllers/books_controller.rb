@@ -1,18 +1,30 @@
 class BooksController < ApplicationController
 	before_action :find_book, only: [:show, :edit, :update, :destroy]
+	before_action :find_categories, only: [:new, :edit]
+	before_action :find_category_id_for_book, only: [:create, :update]
+
 	def index
-		@books = Book.all.order("created_at DESC")
+		if params[:category].blank?
+			@books = Book.all.order("created_at DESC")
+		else
+			@category_id = Category.find_by(name: params[:category]).id
+			@books = Book.where(:category_id => @category_id).order("created_at DESC")
+		end
 	end
 
 	def show
 	end
 
 	def new
-		@book = Book.new
+		#@book = Book.new
+		@book = current_user.books.build
+		#@categories = Category.all.map{|c| [c.name, c.id]}
 	end
 
 	def create
-		@book = Book.new(book_params)
+		#@book = Book.new(book_params)
+		@book = current_user.books.build(book_params)
+		#@book.category_id = params[:category_id]
 
 		if @book.save
 			redirect_to root_path
@@ -39,10 +51,19 @@ class BooksController < ApplicationController
 
 	private
 		def book_params
-			params.require(:book).permit(:title, :description, :author)
+			#params.require(:book).permit(:title, :description, :author)
+			params.require(:book).permit(:title, :description, :author, :category_id)
 		end
 
 		def find_book
 			@book = Book.find(params[:id])
+		end
+
+		def find_categories
+			@categories = Category.all.map{|c| [c.name, c.id]}
+		end
+
+		def find_category_id_for_book
+			@book.category_id = params[:category_id]
 		end
 end
